@@ -4,27 +4,27 @@ public class Nota {
     private int id;
     private int estudianteId;
     private int materiaId;
-    private double nota1;
-    private double nota2;
-    private double notaFinal;
+    private String tipo;
+    private double valor; 
+    private double peso;  
 
     public Nota() {}
 
-    public Nota(int id, int estudianteId, int materiaId, double nota1, double nota2, double notaFinal) {
+    public Nota(int estudianteId, int materiaId, String tipo, double valor, double peso) {
+        this.estudianteId = estudianteId;
+        this.materiaId = materiaId;
+        this.tipo = tipo;
+        this.valor = valor;
+        this.peso = peso;
+    }
+
+    public Nota(int id, int estudianteId, int materiaId, String tipo, double valor, double peso) {
         this.id = id;
         this.estudianteId = estudianteId;
         this.materiaId = materiaId;
-        this.nota1 = nota1;
-        this.nota2 = nota2;
-        this.notaFinal = notaFinal;
-    }
-
-    public Nota(int estudianteId, int materiaId, double nota1, double nota2, double notaFinal) {
-        this.estudianteId = estudianteId;
-        this.materiaId = materiaId;
-        this.nota1 = nota1;
-        this.nota2 = nota2;
-        this.notaFinal = notaFinal;
+        this.tipo = tipo;
+        this.valor = valor;
+        this.peso = peso;
     }
 
     public int getId() { return id; }
@@ -36,12 +36,12 @@ public class Nota {
     public int getMateriaId() { return materiaId; }
     public void setMateriaId(int materiaId) { this.materiaId = materiaId; }
 
-    public double getNota1() { return nota1; }
-    public void setNota1(double nota1) { this.nota1 = nota1; }
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
 
-    public double getNota2() { return nota2; }
-    public void setNota2(double nota2) { this.nota2 = nota2; }
+    public double getValor() { return valor; }
+    public void setValor(double valor) { this.valor = valor; }
 
-    public double getNotaFinal() { return notaFinal; }
-    public void setNotaFinal(double notaFinal) { this.notaFinal = notaFinal; }
+    public double getPeso() { return peso; }
+    public void setPeso(double peso) { this.peso = peso; }
 }
