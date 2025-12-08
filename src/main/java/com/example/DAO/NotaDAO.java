@@ -1,114 +1,123 @@
 package com.example.DAO;
 
 import com.example.model.Nota;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NotaDAO extends MySQLDataHelper {
+public class NotaDAO {
 
-    private static final String TABLE = "notas";
+    private Connection connection;
 
-    private Nota map(ResultSet rs) throws SQLException {
-        return new Nota(
-                rs.getInt("id"),
-                rs.getInt("estudiante_id"),
-                rs.getInt("materia_id"),
-                rs.getString("tipo"),
-                rs.getDouble("valor"),
-                rs.getDouble("peso")
-        );
+    public NotaDAO(Connection connection) {
+        this.connection = connection;
     }
 
-    public void insertar(Nota nota) throws Exception {
-        String sql = "INSERT INTO " + TABLE +
-                " (estudiante_id, materia_id, tipo, valor, peso) VALUES (?, ?, ?, ?, ?)";
+    // Crear una nueva nota
+    public boolean insertarNota(Nota nota) {
+        String sql = "INSERT INTO nota (estudiante_id, curso_codigo, tipo, valor, peso) VALUES (?, ?, ?, ?, ?)";
 
-        try (Connection conn = openConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, nota.getEstudianteId());
-            stmt.setInt(2, nota.getMateriaId());
+            stmt.setInt(2, nota.getCursoCodigo());
             stmt.setString(3, nota.getTipo());
             stmt.setDouble(4, nota.getValor());
             stmt.setDouble(5, nota.getPeso());
 
-            stmt.executeUpdate();
+            return stmt.executeUpdate() > 0;
 
-            ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) nota.setId(rs.getInt(1));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
-    public void actualizar(Nota nota) throws Exception {
-        String sql = "UPDATE " + TABLE +
-                " SET tipo = ?, valor = ?, peso = ? WHERE id = ?";
+    // Obtener notas por estudiante
+    public List<Nota> obtenerNotasPorEstudiante(int estudianteId) {
+        String sql = "SELECT * FROM nota WHERE estudiante_id = ?";
+        List<Nota> notas = new ArrayList<>();
 
-        try (Connection conn = openConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, estudianteId);
+            ResultSet rs = stmt.executeQuery();
 
+            while (rs.next()) {
+                notas.add(new Nota(
+                        rs.getInt("estudiante_id"),
+                        rs.getInt("curso_codigo"),
+                        rs.getString("tipo"),
+                        rs.getDouble("valor"),
+                        rs.getDouble("peso")
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return notas;
+    }
+
+    // Obtener notas por curso
+    public List<Nota> obtenerNotasPorCurso(int cursoCodigo) {
+        String sql = "SELECT * FROM nota WHERE curso_codigo = ?";
+        List<Nota> notas = new ArrayList<>();
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, cursoCodigo);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                notas.add(new Nota(
+                        rs.getInt("estudiante_id"),
+                        rs.getInt("curso_codigo"),
+                        rs.getString("tipo"),
+                        rs.getDouble("valor"),
+                        rs.getDouble("peso")
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return notas;
+    }
+
+    // Actualizar una nota
+    public boolean actualizarNota(Nota nota) {
+        String sql = "UPDATE nota SET tipo=?, valor=?, peso=? WHERE estudiante_id=? AND curso_codigo=?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, nota.getTipo());
             stmt.setDouble(2, nota.getValor());
             stmt.setDouble(3, nota.getPeso());
-            stmt.setInt(4, nota.getId());
+            stmt.setInt(4, nota.getEstudianteId());
+            stmt.setInt(5, nota.getCursoCodigo());
 
-            stmt.executeUpdate();
+            return stmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
-    public void eliminar(int id) throws Exception {
-        String sql = "DELETE FROM " + TABLE + " WHERE id = ?";
+    // Eliminar una nota
+    public boolean eliminarNota(int estudianteId, int cursoCodigo, String tipo) {
+        String sql = "DELETE FROM nota WHERE estudiante_id=? AND curso_codigo=? AND tipo=?";
 
-        try (Connection conn = openConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, id);
-            stmt.executeUpdate();
-        }
-    }
-
-    public Nota obtenerPorId(int id) throws Exception {
-        String sql = "SELECT * FROM " + TABLE + " WHERE id = ?";
-
-        try (Connection conn = openConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, id);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) return map(rs);
-        }
-        return null;
-    }
-
-    public List<Nota> obtenerNotasDeEstudianteMateria(int estudianteId, int materiaId) throws Exception {
-        String sql = "SELECT * FROM " + TABLE + " WHERE estudiante_id = ? AND materia_id = ?";
-
-        try (Connection conn = openConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, estudianteId);
-            stmt.setInt(2, materiaId);
+            stmt.setInt(2, cursoCodigo);
+            stmt.setString(3, tipo);
 
-            ResultSet rs = stmt.executeQuery();
+            return stmt.executeUpdate() > 0;
 
-            List<Nota> lista = new ArrayList<>();
-            while (rs.next()) lista.add(map(rs));
-            return lista;
-        }
-    }
-
-    public List<Nota> obtenerTodos() throws Exception {
-        String sql = "SELECT * FROM " + TABLE;
-
-        try (Connection conn = openConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            List<Nota> lista = new ArrayList<>();
-            while (rs.next()) lista.add(map(rs));
-
-            return lista;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }

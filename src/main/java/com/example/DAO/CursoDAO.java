@@ -6,208 +6,150 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CursoDAO extends MySQLDataHelper implements IGenericDAO<Curso, String> {
+public class CursoDAO extends MySQLDataHelper {
 
-    private Curso map(ResultSet rs) throws SQLException {
-        return new Curso(
-                rs.getString("nombre"),
-                rs.getString("descripcion"),
-                rs.getInt("creditos"),
-                rs.getString("codigo")
-        );
-    }
+    private static final String TABLE = "cursos";
 
-    @Override
-    public void insertar(Curso curso) throws Exception {
-        String sql = "INSERT INTO cursos (codigo, nombre, descripcion, creditos) VALUES (?, ?, ?, ?)";
+    public void insertar(Curso c) throws Exception {
+        String sql = "INSERT INTO " + TABLE +
+                " (nombre, descripcion, creditos, codigo, id_profesor, horario, aula, capacidad, id_materias) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            ps.setString(1, curso.getCodigo());
-            ps.setString(2, curso.getNombre());
-            ps.setString(3, curso.getDescripcion());
-            ps.setInt(4, curso.getCreditos());
+            stmt.setString(1, c.getNombre());
+            stmt.setString(2, c.getDescripcion());
+            stmt.setInt(3, c.getCreditos());
+            stmt.setInt(4, c.getCodigo());
+            stmt.setInt(5, c.getId_profesor());
+            stmt.setString(6, c.getHorario());
+            stmt.setString(7, c.getAula());
+            stmt.setInt(8, c.getCapacidad());
+            stmt.setString(9, c.getId_materias());
 
-            ps.executeUpdate();
+            stmt.executeUpdate();
         }
     }
 
-    @Override
-    public void actualizar(Curso curso) throws Exception {
-        String sql = "UPDATE cursos SET nombre=?, descripcion=?, creditos=? WHERE codigo=?";
+    public void actualizar(Curso c) throws Exception {
+        String sql = "UPDATE " + TABLE + " SET nombre=?, descripcion=?, creditos=?, id_profesor=?, horario=?, aula=?, capacidad=?, id_materias=? WHERE codigo=?";
 
         try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            ps.setString(1, curso.getNombre());
-            ps.setString(2, curso.getDescripcion());
-            ps.setInt(3, curso.getCreditos());
-            ps.setString(4, curso.getCodigo());
+            stmt.setString(1, c.getNombre());
+            stmt.setString(2, c.getDescripcion());
+            stmt.setInt(3, c.getCreditos());
+            stmt.setInt(4, c.getId_profesor());
+            stmt.setString(5, c.getHorario());
+            stmt.setString(6, c.getAula());
+            stmt.setInt(7, c.getCapacidad());
+            stmt.setString(8, c.getId_materias());
+            stmt.setInt(9, c.getCodigo());
 
-            ps.executeUpdate();
+            stmt.executeUpdate();
         }
     }
 
-    @Override
-    public void eliminar(String codigo) throws Exception {
-        String sql = "DELETE FROM cursos WHERE codigo=?";
+    public void eliminar(int codigo) throws Exception {
+        String sql = "DELETE FROM " + TABLE + " WHERE codigo = ?";
 
         try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            ps.setString(1, codigo);
-            ps.executeUpdate();
+            stmt.setInt(1, codigo);
+            stmt.executeUpdate();
         }
     }
 
-    @Override
-    public Curso obtenerPorId(String codigo) throws Exception {
-        String sql = "SELECT * FROM cursos WHERE codigo=?";
+    public Curso obtenerPorCodigo(int codigo) throws Exception {
+        String sql = "SELECT * FROM " + TABLE + " WHERE codigo = ?";
 
         try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            ps.setString(1, codigo);
+            stmt.setInt(1, codigo);
 
-            ResultSet rs = ps.executeQuery();
+            ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return map(rs);
+                return mapCurso(rs);
             }
         }
         return null;
     }
 
-    @Override
     public List<Curso> obtenerTodos() throws Exception {
         List<Curso> lista = new ArrayList<>();
-        String sql = "SELECT * FROM cursos";
+        String sql = "SELECT * FROM " + TABLE;
 
         try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                lista.add(map(rs));
+                lista.add(mapCurso(rs));
             }
         }
-
         return lista;
     }
 
-    @Override
-    public boolean existe(String codigo) throws Exception {
-        String sql = "SELECT 1 FROM cursos WHERE codigo=?";
+    public List<Curso> obtenerCursosPorMateria(String idMateria) throws Exception {
+        List<Curso> lista = new ArrayList<>();
+        String sql = "SELECT * FROM cursos WHERE id_materias = ?";
 
         try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            ps.setString(1, codigo);
-            ResultSet rs = ps.executeQuery();
+            stmt.setString(1, idMateria);
+            ResultSet rs = stmt.executeQuery();
 
-            return rs.next();
-        }
-    }
-
-    @Override
-    public long contar() throws Exception {
-        String sql = "SELECT COUNT(*) AS total FROM cursos";
-
-        try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            if (rs.next()) {
-                return rs.getLong("total");
+            while (rs.next()) {
+                lista.add(mapCurso(rs));
             }
         }
-        return 0;
+        return lista;
     }
 
-    @Override
-    public void insertarBatch(List<Curso> cursos) throws Exception {
-        String sql = "INSERT INTO cursos (codigo, nombre, descripcion, creditos) VALUES (?, ?, ?, ?)";
+    private Curso mapCurso(ResultSet rs) throws Exception {
+        return new Curso(
+                rs.getString("nombre"),
+                rs.getString("descripcion"),
+                rs.getInt("creditos"),
+                rs.getInt("codigo"),
+                rs.getInt("id_profesor"),
+                rs.getString("horario"),
+                rs.getString("aula"),
+                rs.getInt("capacidad"),
+                rs.getString("id_materias")
+        );
+    }
+
+    public boolean reducirCupo(int cursoCodigo) throws Exception {
+        String sql = "UPDATE cursos SET capacidad = capacidad - 1 WHERE codigo = ? AND capacidad > 0";
 
         try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            for (Curso curso : cursos) {
-                ps.setString(1, curso.getCodigo());
-                ps.setString(2, curso.getNombre());
-                ps.setString(3, curso.getDescripcion());
-                ps.setInt(4, curso.getCreditos());
-                ps.addBatch();
-            }
-
-            ps.executeBatch();
+            stmt.setInt(1, cursoCodigo);
+            int updated = stmt.executeUpdate();
+            return updated > 0;
+        } catch (SQLException e) {
+            throw new Exception("Error al reducir cupo del curso " + cursoCodigo + ": " + e.getMessage(), e);
         }
     }
 
-    @Override
-    public void eliminarBatch(List<String> codigos) throws Exception {
-        String sql = "DELETE FROM cursos WHERE codigo=?";
+    public boolean aumentarCupo(int cursoCodigo) throws Exception {
+        String sql = "UPDATE cursos SET capacidad = capacidad + 1 WHERE codigo = ?";
 
         try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            for (String codigo : codigos) {
-                ps.setString(1, codigo);
-                ps.addBatch();
-            }
-            ps.executeBatch();
-        }
-    }
-
-    @Override
-    public List<Curso> buscarPorCampo(String campo, Object valor) throws Exception {
-        String sql = "SELECT * FROM cursos WHERE " + campo + "=?";
-
-        try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setObject(1, valor);
-            ResultSet rs = ps.executeQuery();
-
-            List<Curso> lista = new ArrayList<>();
-            while (rs.next()) lista.add(map(rs));
-
-            return lista;
-        }
-    }
-
-    @Override
-    public List<Curso> buscarLike(String campo, String patron) throws Exception {
-        String sql = "SELECT * FROM cursos WHERE " + campo + " LIKE ?";
-
-        try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, "%" + patron + "%");
-            ResultSet rs = ps.executeQuery();
-
-            List<Curso> lista = new ArrayList<>();
-            while (rs.next()) lista.add(map(rs));
-
-            return lista;
-        }
-    }
-
-    @Override
-    public List<Curso> obtenerPagina(int offset, int limite) throws Exception {
-        String sql = "SELECT * FROM cursos LIMIT ? OFFSET ?";
-
-        try (Connection conn = openConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, limite);
-            ps.setInt(2, offset);
-
-            ResultSet rs = ps.executeQuery();
-            List<Curso> lista = new ArrayList<>();
-
-            while (rs.next()) lista.add(map(rs));
-
-            return lista;
+            stmt.setInt(1, cursoCodigo);
+            int updated = stmt.executeUpdate();
+            return updated > 0;
+        } catch (SQLException e) {
+            throw new Exception("Error al aumentar cupo del curso " + cursoCodigo + ": " + e.getMessage(), e);
         }
     }
 }
